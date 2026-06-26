@@ -1,0 +1,269 @@
+<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:vm="using:FeedMe.App.ViewModels"
+                 xmlns:suki="https://github.com/kikipoulet/SukiUI"
+                 xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 mc:Ignorable="d" d:DesignWidth="1320" d:DesignHeight="840"
+                 x:Class="FeedMe.App.Views.MainWindow"
+                 x:DataType="vm:MainWindowViewModel"
+                 Width="1320" Height="840" MinWidth="1060" MinHeight="600"
+                 Icon="/Assets/avalonia-logo.ico"
+                 Title="FeedMe"
+                 IsMenuVisible="False"
+                 BackgroundAnimationEnabled="True">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <suki:SukiWindow.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6"/>
+    </suki:SukiWindow.Resources>
+
+    <suki:SukiWindow.Styles>
+        <Style Selector="suki|GlassCard.item">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="suki|GlassCard.item.read:not(.selected)">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+
+        <Style Selector="Border.feedrow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Margin" Value="0,1"/>
+        </Style>
+        <Style Selector="Border.feedrow:pointerover">
+            <Setter Property="Background" Value="#15808080"/>
+        </Style>
+        <Style Selector="Border.feedrow.selected">
+            <Setter Property="Background" Value="#283B82F6"/>
+        </Style>
+    </suki:SukiWindow.Styles>
+
+    <Grid ColumnDefinitions="250,370,*" Margin="14">
+
+        <!--  Sidebar: feeds  -->
+        <suki:GlassCard Grid.Column="0" Margin="0,0,7,0" Padding="18">
+            <DockPanel>
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+                    <TextBlock Text="FeedMe" FontSize="26" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="+ Add" VerticalAlignment="Center"
+                            IsEnabled="{Binding !IsBusy}">
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Background="{DynamicResource FlyoutSurfaceBrush}"
+                                        CornerRadius="10" Padding="16">
+                                <StackPanel Width="250" Spacing="8">
+                                    <TextBlock Text="Add a feed" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding NewFeedUrl}"
+                                             Watermark="Feed URL…"
+                                             KeyDown="OnFeedUrlKeyDown"/>
+                                    <TextBox Text="{Binding NewFeedCategory}"
+                                             Watermark="Category (optional)"/>
+                                    <Button Content="Add feed"
+                                            Command="{Binding AddFeedCommand}"
+                                            IsEnabled="{Binding !IsBusy}"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"/>
+                                    <Separator Margin="0,4"/>
+                                    <TextBlock Text="Import subscriptions" FontWeight="SemiBold"/>
+                                    <Button Content="Import OPML file…"
+                                            Click="OnImportOpmlClick"
+                                            IsEnabled="{Binding !IsBusy}"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Classes="Flat"/>
+                                    <Button Content="Paste OPML from clipboard"
+                                            Click="OnPasteOpmlClick"
+                                            IsEnabled="{Binding !IsBusy}"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Classes="Flat"/>
+                                </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </Grid>
+
+                <ScrollViewer Margin="0,10,0,0">
+                    <StackPanel Spacing="2">
+
+                        <!--  All feeds  -->
+                        <Border Classes="feedrow" Cursor="Hand"
+                                Classes.selected="{Binding AllFeeds.IsSelected}"
+                                Tapped="OnAllFeedsTapped">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="{Binding AllFeeds.Title}" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <Border Grid.Column="1" IsVisible="{Binding AllFeeds.HasUnread}"
+                                        Background="{StaticResource AccentBrush}" CornerRadius="10"
+                                        Padding="8,1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding AllFeeds.UnreadCount}" Foreground="White"
+                                               FontSize="12" FontWeight="SemiBold"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!--  Category sections  -->
+                        <ItemsControl ItemsSource="{Binding Groups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FeedGroupViewModel">
+                                    <StackPanel Margin="0,12,0,0">
+                                        <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold"
+                                                   Opacity="0.5" Margin="10,0,0,4"/>
+                                        <ItemsControl ItemsSource="{Binding Feeds}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:FeedListItemViewModel">
+                                                    <Border Classes="feedrow" Cursor="Hand"
+                                                            Classes.selected="{Binding IsSelected}"
+                                                            Tapped="OnFeedRowTapped">
+                                                        <Border.ContextMenu>
+                                                            <ContextMenu>
+                                                                <MenuItem Header="Move to category…" Click="OnMoveFeedClick"/>
+                                                                <MenuItem Header="Remove feed"
+                                                                          Command="{Binding RemoveCommand}"
+                                                                          CommandParameter="{Binding}"/>
+                                                            </ContextMenu>
+                                                        </Border.ContextMenu>
+                                                        <Grid ColumnDefinitions="*,Auto">
+                                                            <TextBlock Text="{Binding Title}" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <Border Grid.Column="1" IsVisible="{Binding HasUnread}"
+                                                                    Background="{StaticResource AccentBrush}" CornerRadius="10"
+                                                                    Padding="8,1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding UnreadCount}" Foreground="White"
+                                                                           FontSize="12" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </suki:GlassCard>
+
+        <!--  Middle: article list  -->
+        <Grid Grid.Column="1" Margin="7,0" RowDefinitions="Auto,Auto,*">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="6,2,6,12">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding SelectedFeed.Title, FallbackValue='All feeds'}"
+                               FontSize="22" FontWeight="Bold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="12" Opacity="0.6"
+                               TextTrimming="CharacterEllipsis"
+                               IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="Refresh"
+                        Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding !IsBusy}"
+                        VerticalAlignment="Center"/>
+            </Grid>
+
+            <ProgressBar Grid.Row="1" IsIndeterminate="True"
+                         IsVisible="{Binding IsBusy}" Margin="6,0,6,8"/>
+
+            <ScrollViewer Grid.Row="2" Padding="0,0,4,0">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FeedItemViewModel">
+                                <suki:GlassCard Classes="item"
+                                                Classes.read="{Binding IsRead}"
+                                                Classes.selected="{Binding IsSelected}"
+                                                Margin="6,4" Padding="14,12"
+                                                Cursor="Hand"
+                                                Tapped="OnItemCardTapped">
+                                    <Grid ColumnDefinitions="14,*">
+                                        <Panel Grid.Column="0" VerticalAlignment="Stretch">
+                                            <Border Width="3" CornerRadius="2"
+                                                    Background="{StaticResource AccentBrush}"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Stretch"
+                                                    IsVisible="{Binding IsSelected}"/>
+                                            <Ellipse Width="8" Height="8"
+                                                     Fill="{StaticResource AccentBrush}"
+                                                     HorizontalAlignment="Left"
+                                                     VerticalAlignment="Top" Margin="0,6,0,0"
+                                                     IsVisible="{Binding ShowUnreadDot}"/>
+                                        </Panel>
+                                        <StackPanel Grid.Column="1" Spacing="5">
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontSize="15" FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"
+                                                       MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Meta}"
+                                                       FontSize="11" Opacity="0.6"/>
+                                            <TextBlock Text="{Binding Summary}"
+                                                       FontSize="12.5" Opacity="0.8"
+                                                       TextWrapping="Wrap"
+                                                       MaxLines="2" TextTrimming="CharacterEllipsis"
+                                                       IsVisible="{Binding Summary, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </suki:GlassCard>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="Nothing here yet. Add a feed or hit Refresh to pull in the latest."
+                               IsVisible="{Binding HasNoItems}"
+                               Opacity="0.6" HorizontalAlignment="Center"
+                               TextAlignment="Center" Margin="0,60"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!--  Reading pane  -->
+        <Grid Grid.Column="2" Margin="7,0,0,0">
+
+            <!--  Placeholder when nothing is selected  -->
+            <suki:GlassCard IsVisible="{Binding SelectedItem, Converter={x:Static conv:ObjectConverters.IsNull}}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="6" Margin="24">
+                    <TextBlock Text="Select an article" FontSize="18" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Opacity="0.8"/>
+                    <TextBlock Text="Pick something from the list to read it here."
+                               Opacity="0.5" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </suki:GlassCard>
+
+            <!--  Article in a native WebView  -->
+            <DockPanel IsVisible="{Binding SelectedItem, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+                <suki:GlassCard DockPanel.Dock="Top" Margin="0,0,0,8" Padding="14,10">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding SelectedItem.Title}"
+                                   FontWeight="SemiBold" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" Margin="0,0,12,0"/>
+                        <ToggleButton Grid.Column="1" Content="Reader view"
+                                      IsChecked="{Binding IsReaderMode}"
+                                      VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" Content="Open in browser  ↗"
+                                Command="{Binding OpenItemCommand}"
+                                CommandParameter="{Binding SelectedItem}"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+                </suki:GlassCard>
+
+                <Border CornerRadius="10" ClipToBounds="True">
+                    <NativeWebView Name="Reader"/>
+                </Border>
+            </DockPanel>
+        </Grid>
+    </Grid>
+
+</suki:SukiWindow>

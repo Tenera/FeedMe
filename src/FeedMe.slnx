@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FeedMe.App/FeedMe.App.csproj" />
+  <Project Path="FeedMe.Core/FeedMe.Core.csproj" />
+</Solution>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>FeedMe sample subscriptions</title>
+  </head>
+  <body>
+    <outline text="Tech" title="Tech">
+      <outline type="rss" text="Ars Technica" title="Ars Technica"
+               xmlUrl="https://feeds.arstechnica.com/arstechnica/index" htmlUrl="https://arstechnica.com"/>
+      <outline type="rss" text="Engadget" title="Engadget"
+               xmlUrl="https://www.engadget.com/rss.xml" htmlUrl="https://www.engadget.com"/>
+    </outline>
+    <outline type="rss" text="NASA Breaking News" title="NASA Breaking News"
+             xmlUrl="https://www.nasa.gov/feed/" htmlUrl="https://www.nasa.gov"/>
+  </body>
+</opml>

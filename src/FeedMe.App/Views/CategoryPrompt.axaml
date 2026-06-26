@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="FeedMe.App.Views.CategoryPrompt"
+        Title="Move to category"
+        Width="400" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="22" Spacing="14">
+        <TextBlock Text="Move feed to category" FontSize="16" FontWeight="SemiBold"/>
+        <TextBox Name="Input" Watermark="e.g. Tech — leave empty for Uncategorized"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Cancel" Click="OnCancel"/>
+            <Button Content="Move" Click="OnOk" IsDefault="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
