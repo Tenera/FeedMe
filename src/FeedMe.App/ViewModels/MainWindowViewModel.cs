@@ -80,9 +80,21 @@ public partial class MainWindowViewModel : ViewModelBase
             IsBusy = true;
             StatusMessage = "Loading…";
             await _feeds.InitializeAsync();
-            var seeded = await _feeds.SeedDefaultsIfEmptyAsync();
-            await ReloadAsync();
-            StatusMessage = seeded ? "Added a few starter feeds to get you going." : null;
+
+            if (await _feeds.SeedDefaultsIfEmptyAsync())
+            {
+                // First run already fetched the starter feeds; no need to refresh again.
+                await ReloadAsync();
+                StatusMessage = "Added a few starter feeds to get you going.";
+            }
+            else
+            {
+                // Refresh existing feeds once on open.
+                StatusMessage = "Refreshing…";
+                var result = await _feeds.RefreshAllAsync();
+                await ReloadAsync();
+                StatusMessage = DescribeRefresh(result);
+            }
         }
         catch (Exception ex)
         {
